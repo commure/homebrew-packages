@@ -13,6 +13,7 @@ jobs:
     runs-on: commure-rops-1c2g
     container:
       image: ghcr.io/homebrew/brew:latest
+      options: --user root
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
