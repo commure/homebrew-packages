@@ -12,6 +12,7 @@ class PythonAT3921 < Formula
     regex(%r{href=.*?v?(3\.9(?:\.\d+)*)/?["' >]}i)
   end
 
+  #>>commure
   # bottle do
   #   sha256 arm64_sequoia: "072624b4503baabd76e37324d4eda6dfdedf4e859c90f53b323c4adbf346adb9"
   #   sha256 arm64_sonoma:  "0d8938a8a41666982846e76338c2269dfaad5a1eed0d2c62b7bc519bf434153a"
@@ -21,6 +22,7 @@ class PythonAT3921 < Formula
   #   sha256 arm64_linux:   "da96bd7d2e23edbbc0740a1885ee8853a8cbe687b9e5c2d8d653b32123159839"
   #   sha256 x86_64_linux:  "cac4999f29fc4d66222af64145bb50d4a0a74483385260b3cdb72962330173de"
   # end
+  #<<commure
 
   # setuptools remembers the build flags python is built with and uses them to
   # build packages later. Xcode-only systems need different flags.
@@ -376,6 +378,7 @@ class PythonAT3921 < Formula
     mv bin/"wheel", bin/"wheel#{version.major_minor}"
 
     # Install unversioned and major-versioned symlinks in libexec/bin.
+    #>>commure
     # {
     #   "pip"    => "pip#{version.major_minor}",
     #   "pip3"   => "pip#{version.major_minor}",
@@ -384,11 +387,14 @@ class PythonAT3921 < Formula
     # }.each do |short_name, long_name|
     #   (libexec/"bin").install_symlink (bin/long_name).realpath => short_name
     # end
+    #<<commure
 
     # post_install happens after link
+    #>>commure
     # %W[wheel#{version.major_minor} pip#{version.major_minor}].each do |e|
     #   (HOMEBREW_PREFIX/"bin").install_symlink bin/e
     # end
+    #<<commure
 
     # Help distutils find brewed stuff when building extensions
     include_dirs = [HOMEBREW_PREFIX/"include", Formula["openssl@3"].opt_include,
