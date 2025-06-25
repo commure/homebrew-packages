@@ -198,9 +198,6 @@ class PythonAT3921 < Formula
     args << "LDFLAGS_NODIST=#{ldflags_nodist.join(" ")}" unless ldflags_nodist.empty?
     args << "CPPFLAGS=#{cppflags.join(" ")}" unless cppflags.empty?
 
-    puts "Configuring Python with the following options:"
-    puts args
-
     system "./configure", *args
     system "make"
 
