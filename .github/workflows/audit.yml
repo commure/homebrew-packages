@@ -10,10 +10,7 @@ on:
     - cron: '0 3 * * *' # Runs daily at 3 AM UTC
 jobs:
   audit:
-    runs-on: commure-rops-1c2g
-    container:
-      image: ghcr.io/homebrew/brew:latest
-      options: --user root
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
