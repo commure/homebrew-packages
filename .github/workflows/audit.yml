@@ -1,0 +1,22 @@
+name: Audit Homebrew Repository
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - "*"
+  schedule:
+    - cron: '0 3 * * *' # Runs daily at 3 AM UTC
+jobs:
+  audit:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Setup hombrew tap
+        run: |
+          brew tap commure/packages ./
+      - name: Run brew audit
+        run: |
+          brew audit --strict --online --tap ${{ github.repository }}
