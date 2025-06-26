@@ -10,7 +10,7 @@ on:
     - cron: '0 3 * * *' # Runs daily at 3 AM UTC
 jobs:
   audit:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
