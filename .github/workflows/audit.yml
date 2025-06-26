@@ -20,6 +20,9 @@ jobs:
       - name: Setup hombrew tap
         run: |
           brew tap commure/packages ./
+      - name: Update homebrew
+        run: |
+          brew update
       - name: Run brew audit
         run: |
           brew audit --strict --online --tap ${{ github.repository }}
