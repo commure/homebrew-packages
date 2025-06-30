@@ -6,12 +6,12 @@ This is a **private Homebrew tap** for distributing custom formulae and casks.
 
 1. **Add the tap:**
     ```sh
-    brew tap commure/packages git@github.com:commure/homebrew-packages
+    brew tap commure/packages
     ```
 
 2. **Install a formula:**
     ```sh
-    brew install commure/packages/python@3.9
+    brew install commure/packages/python@3.9.19
     ```
 
 3. **Upgrade formulae:**
