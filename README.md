@@ -1,6 +1,6 @@
 # Homebrew Tap: commure/homebrew-packages
 
-This is a **private Homebrew tap** for distributing custom formulae and casks.
+This is a **public Homebrew tap** for distributing custom formulae and casks.
 
 ## Usage
 
@@ -26,5 +26,4 @@ This is a **private Homebrew tap** for distributing custom formulae and casks.
 
 ## Notes
 
-- This repository is private. Access is restricted.
 - For issues or requests, contact the repository maintainers.
