@@ -12,17 +12,7 @@ class PythonAT3923 < Formula
     regex(%r{href=.*?v?(3\.9(?:\.\d+)*)/?["' >]}i)
   end
 
-  #>>commure
-  # bottle do
-  #   sha256 arm64_sequoia: "e088eaa87ecbf35c8c87ffd1e6e864b20509ec1597c4f5f98360fe500d2292e5"
-  #   sha256 arm64_sonoma:  "c742522959cf677a09ba96071c9c036caaa1e8a9e08b0dba9b8b07babde351f2"
-  #   sha256 arm64_ventura: "ca973824df91389a033f153a3e2bd5f0e818c42fe4df3b0576e427f3d1d11e84"
-  #   sha256 sonoma:        "844b1b98b64bb3a0317d8da05ca3674a98b522a361790090332da15372ca195e"
-  #   sha256 ventura:       "ca3dfb7151380a909adc83c10f0ddcfb8c1c09f9aac93c1b87e91b3a2ab6fa5e"
-  #   sha256 arm64_linux:   "05fb5b5497827bc1db68ca2e895c0820900c64d174a7ad60b01123d5cea33944"
-  #   sha256 x86_64_linux:  "4ab2946adbebc2a587565156aa5c2e12b6f850a1e76bed19e5aeac82b358047c"
-  # end
-  #<<commure
+  no_autobump! because: :requires_manual_review
 
   # setuptools remembers the build flags python is built with and uses them to
   # build packages later. Xcode-only systems need different flags.
@@ -79,11 +69,6 @@ class PythonAT3923 < Formula
     on_macos do
       return frameworks/"Python#{version.major_minor_patch}.framework/Versions/#{version.major_minor}/lib/python#{version.major_minor}"
     end
-    #>> commure
-    # on_linux do
-    #   return lib/"python#{version.major_minor}"
-    # end
-    #<< commure
   end
 
   def site_packages_cellar
@@ -216,10 +201,6 @@ class PythonAT3923 < Formula
       prefix.glob("*.app") { |app| mv app, app.to_s.sub(/\.app$/, " 3.app") }
 
       pc_dir = frameworks/"Python#{version.major_minor_patch}.framework/Versions"/version.major_minor/"lib/pkgconfig"
-      # Symlink the pkgconfig files into HOMEBREW_PREFIX so they're accessible.
-      #>> commure
-      #(lib/"pkgconfig").install_symlink pc_dir.children
-      #<< commure
 
       # Prevent third-party packages from building against fragile Cellar paths
       bad_cellar_path_files = [
@@ -234,11 +215,6 @@ class PythonAT3923 < Formula
       inreplace lib_cellar/"config-#{version.major_minor}-darwin/Makefile",
                 /^LINKFORSHARED=(.*)PYTHONFRAMEWORKDIR(.*)/,
                 "LINKFORSHARED=\\1PYTHONFRAMEWORKINSTALLDIR\\2"
-
-      # Symlink the pkgconfig files into HOMEBREW_PREFIX so they're accessible.
-      #>> commure
-      #(lib/"pkgconfig").install_symlink pc_dir.children
-      #<< commure
 
       # Fix for https://github.com/Homebrew/homebrew-core/issues/21212
       inreplace lib_cellar/"_sysconfigdata__darwin_darwin.py",
@@ -306,21 +282,6 @@ class PythonAT3923 < Formula
     # Write out sitecustomize.py
     (lib_cellar/"sitecustomize.py").atomic_write(sitecustomize)
 
-    # Install unversioned and major-versioned symlinks in libexec/bin.
-    #>> commure
-    # {
-    #   "idle"           => "idle#{version.major_minor}",
-    #   "idle3"          => "idle#{version.major_minor}",
-    #   "pydoc"          => "pydoc#{version.major_minor}",
-    #   "pydoc3"         => "pydoc#{version.major_minor}",
-    #   "python"         => "python#{version.major_minor}",
-    #   "python3"        => "python#{version.major_minor}",
-    #   "python-config"  => "python#{version.major_minor}-config",
-    #   "python3-config" => "python#{version.major_minor}-config",
-    # }.each do |short_name, long_name|
-    #   (libexec/"bin").install_symlink (bin/long_name).realpath => short_name
-    # end
-    #<< commure
   end
 
   def post_install
@@ -373,25 +334,6 @@ class PythonAT3923 < Formula
 
     rm_r(bin.glob("pip{,3}"))
     mv bin/"wheel", bin/"wheel#{version.major_minor}"
-
-    # Install unversioned and major-versioned symlinks in libexec/bin.
-    #>>commure
-    # {
-    #   "pip"    => "pip#{version.major_minor}",
-    #   "pip3"   => "pip#{version.major_minor}",
-    #   "wheel"  => "wheel#{version.major_minor}",
-    #   "wheel3" => "wheel#{version.major_minor}",
-    # }.each do |short_name, long_name|
-    #   (libexec/"bin").install_symlink (bin/long_name).realpath => short_name
-    # end
-    #<<commure
-
-    # post_install happens after link
-    #>>commure
-    # %W[wheel#{version.major_minor} pip#{version.major_minor}].each do |e|
-    #   (HOMEBREW_PREFIX/"bin").install_symlink bin/e
-    # end
-    #<<commure
 
     # Help distutils find brewed stuff when building extensions
     include_dirs = [HOMEBREW_PREFIX/"include", Formula["openssl@3"].opt_include,
