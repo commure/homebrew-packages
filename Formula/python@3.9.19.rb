@@ -12,17 +12,7 @@ class PythonAT3919 < Formula
     regex(%r{href=.*?v?(3\.9(?:\.\d+)*)/?["' >]}i)
   end
 
-  #>>commure
-  # bottle do
-  #   sha256 arm64_sonoma:   "57f58fe8682f4dbcf39f5f4f1cedb0c7ce6f75275d7325fb1b314f9574d4842f"
-  #   sha256 arm64_ventura:  "0cf6dafd4cd9dddf94cb283f4e7a481b2d1ec410b32ca511318330acaa2681ea"
-  #   sha256 arm64_monterey: "1170a572e201af538c79e5c0ab560365342137f589c763f7ab52baba0d2fb9c0"
-  #   sha256 sonoma:         "55236c9f34924d02f9a8d99b7dc40708c3d9c05ae6f201d03ff22f50d49f8371"
-  #   sha256 ventura:        "29cdf8efa709b1155cef284f72d1025ca61532de66dcbe3af2b9b03064f0a44d"
-  #   sha256 monterey:       "b49781b3aad464300201752503999ff31eb0071f0fc7b9cb25b76e1129b34bbb"
-  #   sha256 x86_64_linux:   "b066eb67ff2a7672da5f1949a19b1f33f5fef35eab15a92aacc56f6db044f673"
-  # end
-  #<<commure
+  no_autobump! because: :requires_manual_review
 
   # setuptools remembers the build flags python is built with and uses them to
   # build packages later. Xcode-only systems need different flags.
@@ -216,10 +206,6 @@ class PythonAT3919 < Formula
       prefix.glob("*.app") { |app| mv app, app.to_s.sub(/\.app$/, " 3.app") }
 
       pc_dir = frameworks/"Python#{version.major_minor_patch}.framework/Versions"/version.major_minor/"lib/pkgconfig"
-      # Symlink the pkgconfig files into HOMEBREW_PREFIX so they're accessible.
-      #>> commure
-      #(lib/"pkgconfig").install_symlink pc_dir.children
-      #<< commure
 
       # Prevent third-party packages from building against fragile Cellar paths
       bad_cellar_path_files = [
@@ -234,11 +220,6 @@ class PythonAT3919 < Formula
       inreplace lib_cellar/"config-#{version.major_minor}-darwin/Makefile",
                 /^LINKFORSHARED=(.*)PYTHONFRAMEWORKDIR(.*)/,
                 "LINKFORSHARED=\\1PYTHONFRAMEWORKINSTALLDIR\\2"
-
-      # Symlink the pkgconfig files into HOMEBREW_PREFIX so they're accessible.
-      #>> commure
-      #(lib/"pkgconfig").install_symlink pc_dir.children
-      #<< commure
 
       # Fix for https://github.com/Homebrew/homebrew-core/issues/21212
       inreplace lib_cellar/"_sysconfigdata__darwin_darwin.py",
@@ -306,21 +287,6 @@ class PythonAT3919 < Formula
     # Write out sitecustomize.py
     (lib_cellar/"sitecustomize.py").atomic_write(sitecustomize)
 
-    # Install unversioned and major-versioned symlinks in libexec/bin.
-    #>> commure
-    # {
-    #   "idle"           => "idle#{version.major_minor}",
-    #   "idle3"          => "idle#{version.major_minor}",
-    #   "pydoc"          => "pydoc#{version.major_minor}",
-    #   "pydoc3"         => "pydoc#{version.major_minor}",
-    #   "python"         => "python#{version.major_minor}",
-    #   "python3"        => "python#{version.major_minor}",
-    #   "python-config"  => "python#{version.major_minor}-config",
-    #   "python3-config" => "python#{version.major_minor}-config",
-    # }.each do |short_name, long_name|
-    #   (libexec/"bin").install_symlink (bin/long_name).realpath => short_name
-    # end
-    #<< commure
   end
 
   def post_install
@@ -373,25 +339,6 @@ class PythonAT3919 < Formula
 
     rm_r(bin.glob("pip{,3}"))
     mv bin/"wheel", bin/"wheel#{version.major_minor}"
-
-    # Install unversioned and major-versioned symlinks in libexec/bin.
-    #>>commure
-    # {
-    #   "pip"    => "pip#{version.major_minor}",
-    #   "pip3"   => "pip#{version.major_minor}",
-    #   "wheel"  => "wheel#{version.major_minor}",
-    #   "wheel3" => "wheel#{version.major_minor}",
-    # }.each do |short_name, long_name|
-    #   (libexec/"bin").install_symlink (bin/long_name).realpath => short_name
-    # end
-    #<<commure
-
-    # post_install happens after link
-    #>>commure
-    # %W[wheel#{version.major_minor} pip#{version.major_minor}].each do |e|
-    #   (HOMEBREW_PREFIX/"bin").install_symlink bin/e
-    # end
-    #<<commure
 
     # Help distutils find brewed stuff when building extensions
     include_dirs = [HOMEBREW_PREFIX/"include", Formula["openssl@3"].opt_include,

@@ -1,15 +1,15 @@
-class PythonAT3923 < Formula
+class PythonAT31018 < Formula
   desc "Interpreted, interactive, object-oriented programming language"
   homepage "https://www.python.org/"
-  url "https://www.python.org/ftp/python/3.9.23/Python-3.9.23.tar.xz"
-  sha256 "61a42919e13d539f7673cf11d1c404380e28e540510860b9d242196e165709c9"
+  url "https://www.python.org/ftp/python/3.10.18/Python-3.10.18.tgz"
+  sha256 "1b19ab802518eb36a851f5ddef571862c7a31ece533109a99df6d5af0a1ceb99"
   license "Python-2.0"
 
   keg_only "it allows multiple patch versions of Python to co-exist"
 
   livecheck do
     url "https://www.python.org/ftp/python/"
-    regex(%r{href=.*?v?(3\.9(?:\.\d+)*)/?["' >]}i)
+    regex(%r{href=.*?v?(3\.10(?:\.\d+)*)/?["' >]}i)
   end
 
   no_autobump! because: :requires_manual_review
@@ -36,6 +36,7 @@ class PythonAT3923 < Formula
 
   on_linux do
     depends_on "libnsl"
+    depends_on "libtirpc"
   end
 
   # Always update to latest release
@@ -59,10 +60,19 @@ class PythonAT3923 < Formula
     sha256 "661e1abd9198507b1409a20c02106d9670b2576e916d58f520316666abca6729"
   end
 
-  # Link against libmpdec.so.3, update for mpdecimal.h symbol cleanup.
+  # Modify default sysconfig to match the brew install layout.
+  # Remove when a non-patching mechanism is added (https://bugs.python.org/issue43976).
+  # We (ab)use osx_framework_library to exploit pip behaviour to allow --prefix to still work.
   patch do
-    url "https://www.bytereef.org/contrib/decimal.diff"
-    sha256 "b0716ba88a4061dcc8c9bdd1acc57f62884000d1f959075090bf2c05ffa28bf3"
+    url "https://raw.githubusercontent.com/Homebrew/formula-patches/a1618a5005d0b01d63b720321806820a03432f1a/python/3.10-sysconfig.diff"
+    sha256 "51bc741a7f201bf7382067f5561a10968476c98d952e54a4f1931f17f1397ef8"
+  end
+
+  # Make bundled distutils look at preferred sysconfig scheme.
+  # Remove with Python 3.12.
+  patch do
+    url "https://raw.githubusercontent.com/Homebrew/formula-patches/a1618a5005d0b01d63b720321806820a03432f1a/python/3.10-distutils-scheme.diff"
+    sha256 "d1a29b3c9ecf8aecd65e1e54efc42fb1422b2f5d05cba0c747178f4ef8a69683"
   end
 
   def lib_cellar
@@ -110,7 +120,6 @@ class PythonAT3923 < Formula
       --with-openssl=#{Formula["openssl@3"].opt_prefix}
       --with-dbmliborder=gdbm:ndbm
       --enable-optimizations
-      --with-lto
       --with-system-expat
       --with-system-libmpdec
     ]
@@ -127,6 +136,10 @@ class PythonAT3923 < Formula
     cppflags       = ["-I#{HOMEBREW_PREFIX}/include"]
 
     if OS.mac?
+      # Enabling LTO on Linux makes libpython3.*.a unusable for anyone whose GCC
+      # install does not match the one in CI _exactly_ (major and minor version).
+      # https://github.com/orgs/Homebrew/discussions/3734
+      args << "--with-lto"
       args << "--enable-framework=#{frameworks}"
       args << "--with-framework-name=Python#{version.major_minor_patch}"
       args << "--with-dtrace"
@@ -149,7 +162,7 @@ class PythonAT3923 < Formula
     # We want our readline! This is just to outsmart the detection code,
     # superenv makes cc always find includes/libs!
     inreplace "setup.py",
-      "do_readline = self.compiler.find_library_file(self.lib_dirs, 'readline')",
+      /do_readline = self.compiler.find_library_file\(self.lib_dirs,\s*readline_lib\)/,
       "do_readline = '#{Formula["readline"].opt_lib/shared_library("libhistory")}'"
 
     inreplace "setup.py" do |s|
@@ -228,7 +241,7 @@ class PythonAT3923 < Formula
       inreplace Dir[lib_cellar/"**/_sysconfigdata_*linux_x86_64-*.py",
                     lib_cellar/"config*/Makefile",
                     bin/"python#{version.major_minor}-config",
-                    lib/"pkgconfig/python-3.?.pc"],
+                    lib/"pkgconfig/python-3*.pc"],
                 prefix, opt_prefix
 
       inreplace bin/"python#{version.major_minor}-config",
@@ -266,7 +279,6 @@ class PythonAT3923 < Formula
     rm lib_cellar.glob("ensurepip/_bundled/{setuptools,pip}-*.whl")
     %w[setuptools pip].each do |r|
       resource(r).stage do
-        system whl_build/"bin/pip3", "install", *common_pip_args, "." if r == "setuptools"
         system whl_build/"bin/pip3", "wheel", *common_pip_args,
                                               "--wheel-dir=#{lib_cellar}/ensurepip/_bundled",
                                               "."
@@ -335,27 +347,6 @@ class PythonAT3923 < Formula
     rm_r(bin.glob("pip{,3}"))
     mv bin/"wheel", bin/"wheel#{version.major_minor}"
 
-    # Help distutils find brewed stuff when building extensions
-    include_dirs = [HOMEBREW_PREFIX/"include", Formula["openssl@3"].opt_include,
-                    Formula["sqlite"].opt_include]
-    library_dirs = [HOMEBREW_PREFIX/"lib", Formula["openssl@3"].opt_lib,
-                    Formula["sqlite"].opt_lib]
-
-    cfg = lib_cellar/"distutils/distutils.cfg"
-    cfg.atomic_write <<~INI
-      [install]
-      prefix=#{HOMEBREW_PREFIX}
-      [build_ext]
-      include_dirs=#{include_dirs.join ":"}
-      library_dirs=#{library_dirs.join ":"}
-    INI
-
-    # setuptools 63.2.0+ breaks when used inside superenv.
-    # https://github.com/pypa/distutils/pull/155
-    # https://github.com/pypa/distutils/issues/158
-    inreplace site_packages/"setuptools/_distutils/command/_framework_compat.py",
-              /^(\s+homebrew_prefix\s+=\s+).*/,
-              "\\1'#{HOMEBREW_PREFIX}'"
   end
 
   def sitecustomize
