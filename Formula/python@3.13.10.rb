@@ -1,15 +1,15 @@
-class PythonAT3140 < Formula
+class PythonAT31310 < Formula
   desc "Interpreted, interactive, object-oriented programming language"
   homepage "https://www.python.org/"
-  url "https://www.python.org/ftp/python/3.14.0/Python-3.14.0.tgz"
-  sha256 "88d2da4eed42fa9a5f42ff58a8bc8988881bd6c547e297e46682c2687638a851"
+  url "https://www.python.org/ftp/python/3.13.10/Python-3.13.10.tgz"
+  sha256 "de5930852e95ba8c17b56548e04648470356ac47f7506014664f8f510d7bd61b"
   license "Python-2.0"
 
   keg_only "it allows multiple patch versions of Python to co-exist"
 
   livecheck do
     url "https://www.python.org/ftp/python/"
-    regex(%r{href=.*?v?(3\.14(?:\.\d+)*)/?["' >]}i)
+    regex(%r{href=.*?v?(3\.13(?:\.\d+)*)/?["' >]}i)
   end
 
   no_autobump! because: :requires_manual_review
@@ -19,12 +19,11 @@ class PythonAT3140 < Formula
   depends_on "openssl@3"
   depends_on "sqlite"
   depends_on "xz"
-  depends_on "zstd"
 
   uses_from_macos "bzip2"
   uses_from_macos "expat", since: :sequoia
   uses_from_macos "libedit"
-  uses_from_macos "libffi"
+  uses_from_macos "libffi", since: :catalina
   uses_from_macos "ncurses"
   uses_from_macos "unzip"
   uses_from_macos "zlib"
@@ -33,19 +32,21 @@ class PythonAT3140 < Formula
     depends_on "berkeley-db@5"
   end
 
+  link_overwrite "lib/python3.13/site-packages/pip*"
+  link_overwrite "lib/python3.13/site-packages/wheel*"
+
+  pypi_packages package_name:   "",
+                extra_packages: %w[flit-core pip wheel]
+
+  # Always update to latest release
   resource "flit-core" do
     url "https://files.pythonhosted.org/packages/69/59/b6fc2188dfc7ea4f936cd12b49d707f66a1cb7a1d2c16172963534db741b/flit_core-3.12.0.tar.gz"
     sha256 "18f63100d6f94385c6ed57a72073443e1a71a4acb4339491615d0f16d6ff01b2"
   end
 
   resource "pip" do
-    url "https://files.pythonhosted.org/packages/20/16/650289cd3f43d5a2fadfd98c68bd1e1e7f2550a1a5326768cddfbcedb2c5/pip-25.2.tar.gz"
-    sha256 "578283f006390f85bb6282dffb876454593d637f5d1be494b5202ce4877e71f2"
-  end
-
-  resource "setuptools" do
-    url "https://files.pythonhosted.org/packages/18/5d/3bf57dcd21979b887f014ea83c24ae194cfcd12b9e0fda66b957c69d1fca/setuptools-80.9.0.tar.gz"
-    sha256 "f36b47402ecde768dbfafc46e8e4207b4360c654f1f3bb84475f0a28628fb19c"
+    url "https://files.pythonhosted.org/packages/fe/6e/74a3f0179a4a73a53d66ce57fdb4de0080a8baa1de0063de206d6167acc2/pip-25.3.tar.gz"
+    sha256 "8d0538dbbd7babbd207f261ed969c65de439f6bc9e5dbd3b3b9a77f25d95f343"
   end
 
   resource "wheel" do
@@ -67,12 +68,18 @@ class PythonAT3140 < Formula
     end
   end
 
-  def site_packages_cellar = lib_cellar/"site-packages"
+  def site_packages_cellar
+    lib_cellar/"site-packages"
+  end
 
   # The HOMEBREW_PREFIX location of site-packages.
-  def site_packages = HOMEBREW_PREFIX/"lib/pymulti/#{version.major_minor_patch}/lib/python#{version.major_minor}/site-packages"
+  def site_packages
+    HOMEBREW_PREFIX/"lib/pymulti/#{version.major_minor_patch}/lib/python#{version.major_minor}/site-packages"
+  end
 
-  def python3 = bin/"python#{version.major_minor}"
+  def python3
+    bin/"python#{version.major_minor}"
+  end
 
   def install
     # Unset these so that installing pip and setuptools puts them where we want
@@ -158,13 +165,8 @@ class PythonAT3140 < Formula
     system "make"
 
     ENV.deparallelize do
-      # The `altinstall` target prevents the installation of files with only Python's major
-      # version in its name. This allows us to link multiple versioned Python formulae.
-      #   https://github.com/python/cpython#installing-multiple-versions
-      #
       # Tell Python not to install into /Applications (default for framework builds)
-      target = "altinstall"
-      system "make", target, "PYTHONAPPSDIR=#{prefix}"
+      system "make", "altinstall", "PYTHONAPPSDIR=#{prefix}"
       system "make", "frameworkinstallextras", "PYTHONAPPSDIR=#{pkgshare}" if OS.mac?
     end
 
@@ -177,7 +179,6 @@ class PythonAT3140 < Formula
       # Prevent third-party packages from building against fragile Cellar paths
       bad_cellar_path_files = [
         lib_cellar/"_sysconfigdata__darwin_darwin.py",
-        lib_cellar/"_sysconfig_vars__darwin_darwin.json",
         lib_cellar/"config-#{version.major_minor}-darwin/Makefile",
         pc_dir/"python-#{version.major_minor}.pc",
         pc_dir/"python-#{version.major_minor}-embed.pc",
@@ -194,7 +195,6 @@ class PythonAT3140 < Formula
                 %r{('LINKFORSHARED': .*?) (Python#{version.major_minor_patch}.framework/Versions/3.\d+/Python#{version.major_minor_patch})'}m,
                 "\\1 #{opt_prefix}/Frameworks/\\2'"
 
-      # For an altinstall, remove symlinks that conflict with the main Python formula.
       rm %w[Headers Resources Versions/Current].map { |subdir| frameworks/"Python#{version.major_minor_patch}.framework"/subdir }
     else
       # Prevent third-party packages from building against fragile Cellar paths
@@ -208,7 +208,7 @@ class PythonAT3140 < Formula
                 'prefix_real=$(installed_prefix "$0")',
                 "prefix_real=#{opt_prefix}"
 
-      # For an altinstall, remove symlinks that conflict with the main Python formula.
+      # Remove symlinks that conflict with the main Python formula.
       rm lib/"libpython3.so"
     end
 
@@ -225,7 +225,7 @@ class PythonAT3140 < Formula
     ]
     whl_build = buildpath/"whl_build"
     system python3, "-m", "venv", whl_build
-    %w[flit-core wheel setuptools].each do |r|
+    %w[flit-core wheel].each do |r|
       resource(r).stage do
         system whl_build/"bin/pip3", "install", *common_pip_args, "."
       end
@@ -243,6 +243,9 @@ class PythonAT3140 < Formula
                                             "--wheel-dir=#{lib_cellar}/ensurepip/_bundled",
                                             "."
     end
+
+    # Ensure that our new pip wheel is globally readable.
+    chmod "ugo+r", lib_cellar.glob("ensurepip/_bundled/pip-*.whl")
 
     # Patch ensurepip to bootstrap our updated version of pip
     inreplace lib_cellar/"ensurepip/__init__.py" do |s|
@@ -349,22 +352,22 @@ class PythonAT3140 < Formula
           sys.path.extend(library_packages)
           # the Cellar site-packages is a symlink to the HOMEBREW_PREFIX
           # site_packages; prefer the shorter paths
-          long_prefix = re.compile(r'#{rack}/[0-9\\._abrc]+/(?:Frameworks/Python\\.framework/Versions/#{version.major_minor}/)?lib/python#{version.major_minor}/site-packages')
+          long_prefix = re.compile(r'#{rack}/(?:[0-9\\._abrc]+/Frameworks/Python\\.framework/Versions/#{version.major_minor}/)?lib/python#{version.major_minor}/site-packages')
           sys.path = [long_prefix.sub('#{site_packages}', p) for p in sys.path]
           # Set the sys.executable to use the opt_prefix. Only do this if PYTHONEXECUTABLE is not
           # explicitly set and we are not in a virtualenv:
           if 'PYTHONEXECUTABLE' not in os.environ and sys.prefix == sys.base_prefix:
               sys.executable = sys._base_executable = '#{opt_bin}/python#{version.major_minor}'
       if 'PYTHONHOME' not in os.environ:
-          cellar_prefix = re.compile(r'#{rack}/[0-9\\._abrc]+(?=/|$)')
+          cellar_prefix = re.compile(r'#{rack}/[0-9\\._abrc]+/')
           if os.path.realpath(sys.base_prefix).startswith('#{rack}'):
-              new_prefix = cellar_prefix.sub('#{opt_prefix}', sys.base_prefix)
+              new_prefix = cellar_prefix.sub('#{opt_prefix}/', sys.base_prefix)
               site.PREFIXES[:] = [new_prefix if x == sys.base_prefix else x for x in site.PREFIXES]
               if sys.prefix == sys.base_prefix:
                   sys.prefix = new_prefix
               sys.base_prefix = new_prefix
           if os.path.realpath(sys.base_exec_prefix).startswith('#{rack}'):
-              new_exec_prefix = cellar_prefix.sub('#{opt_prefix}', sys.base_exec_prefix)
+              new_exec_prefix = cellar_prefix.sub('#{opt_prefix}/', sys.base_exec_prefix)
               site.PREFIXES[:] = [new_exec_prefix if x == sys.base_exec_prefix else x for x in site.PREFIXES]
               if sys.exec_prefix == sys.base_exec_prefix:
                   sys.exec_prefix = new_exec_prefix
@@ -391,9 +394,6 @@ class PythonAT3140 < Formula
       `python3`, `python3-config`, `pip3` etc., respectively, are installed into
         #{opt_libexec}/bin
 
-      `idle#{version.major_minor}` requires tkinter, which is available separately:
-        brew install python-tk@#{version.major_minor}
-
       See: https://docs.brew.sh/Homebrew-and-Python
     EOS
   end
@@ -412,7 +412,6 @@ class PythonAT3140 < Formula
     system python3, "-c", "import pyexpat"
     system python3, "-c", "import readline"
     system python3, "-c", "import zlib"
-    system python3, "-c", "import _zstd"
 
     # tkinter is provided in a separate formula
     assert_match "ModuleNotFoundError: No module named '_tkinter'",
@@ -438,11 +437,6 @@ class PythonAT3140 < Formula
     system python3, "dbm_test.py"
 
     system bin/"pip#{version.major_minor}", "list", "--format=columns"
-
-    # Check our sitecustomize.py
-    assert_match HOMEBREW_CELLAR.to_s, shell_output("#{python3} -Sc 'import sys; print(sys.base_prefix)'")
-    refute_match HOMEBREW_CELLAR.to_s, shell_output("#{python3} -c 'import sys; print(sys.base_prefix)'")
-    refute_match site_packages_cellar.to_s, shell_output("#{python3} -c 'import sys; print(sys.path)'")
 
     # Verify our sysconfig patches
     sysconfig_path = "import sysconfig; print(sysconfig.get_paths(\"osx_framework_library\")[\"data\"])"
