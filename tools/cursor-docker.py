@@ -20,10 +20,12 @@ CURSOR_INSTALL = "https://cursor.com/install"
 
 DEFAULT_DOCKER_ARGS = ""
 
-DOCKERFILE="""
+DOCKERFILE = """
 FROM debian:trixie AS cursor
 
 ARG CURSOR_VERSION
+ARG USER_UID=1000
+ARG USER_GID=1000
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
     curl \
@@ -37,7 +39,8 @@ RUN curl https://cursor.com/install -fsS | bash
 RUN mv /root/.local/share/cursor-agent /usr/local/share/cursor-agent && \
     ln -s /usr/local/share/cursor-agent/versions/$CURSOR_VERSION/cursor-agent /usr/local/bin/cursor-agent
 
-RUN useradd -u 502 -g 20 -m -d /workspace cursor
+RUN groupadd -g $USER_GID cursor || true
+RUN useradd -u $USER_UID -g $USER_GID -m -d /workspace cursor
 RUN usermod -aG sudo cursor
 RUN echo "cursor ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 
@@ -108,13 +111,24 @@ def read_docker_args(cursor_docker: Path) -> list[str]:
     return shlex.split(" ".join(lines))
 
 
+def get_user_ids() -> tuple[int, int]:
+    """Get the current user's UID and primary GID."""
+    uid = os.getuid()
+    gid = os.getgid()
+    return uid, gid
+
+
 def build_docker_image(version: str, dockerfile_path: Path) -> None:
     """Build the Cursor Docker image."""
+    uid, gid = get_user_ids()
     print(f"Docker image 'cursor' not found. Building version {version}...")
+    print(f"Using UID={uid}, GID={gid}")
     subprocess.run(
         [
             "docker", "buildx", "build",
             "--build-arg", f"CURSOR_VERSION={version}",
+            "--build-arg", f"USER_UID={uid}",
+            "--build-arg", f"USER_GID={gid}",
             "--tag", f"cursor:{version}",
             str(dockerfile_path),
         ],
@@ -153,10 +167,14 @@ def cmd_run(args: argparse.Namespace) -> None:
 def cmd_config(args: argparse.Namespace) -> None:
     """Show configuration information."""
     config_dir = get_config_dir()
+    uid, gid = get_user_ids()
     print(f"Configuration directory: {config_dir}")
     print(f"  Dockerfile:   {config_dir / 'cursor-docker' / 'Dockerfile'}")
     print(f"  Docker args:  {config_dir / 'cursor-docker' / 'docker-args'}")
     print(f"  Cursor home:  {config_dir / 'cursor-home'}")
+    print(f"User IDs (used when building image):")
+    print(f"  UID: {uid}")
+    print(f"  GID: {gid}")
 
 
 def cmd_version(args: argparse.Namespace) -> None:
