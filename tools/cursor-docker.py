@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-cursor-cli: Run Cursor AI agent in a Docker container.
+cursor-docker: Run Cursor AI agent in a Docker container.
 
 This tool manages a Docker-based Cursor AI environment, automatically
 fetching the latest version and building the container as needed.
@@ -70,8 +70,8 @@ def docker_image_exists(image: str) -> bool:
 def setup_cursor_dirs() -> tuple[Path, Path]:
     """Create cursor-home and cursor-docker directories, write Dockerfile and docker-args if needed."""
     home = Path.home()
-    cursor_home = home / ".config" / "cursor-cli" / "cursor-home"
-    cursor_docker = home / ".config" / "cursor-cli" / "cursor-docker"
+    cursor_home = home / ".config" / "cursor-docker" / "cursor-home"
+    cursor_docker = home / ".config" / "cursor-docker" / "cursor-docker"
 
     cursor_home.mkdir(parents=True, exist_ok=True)
     cursor_docker.mkdir(parents=True, exist_ok=True)
@@ -124,7 +124,7 @@ def build_docker_image(version: str, dockerfile_path: Path) -> None:
 
 def get_config_dir() -> Path:
     """Return the configuration directory path."""
-    return Path.home() / ".config" / "cursor-cli"
+    return Path.home() / ".config" / "cursor-docker"
 
 
 def cmd_run(args: argparse.Namespace) -> None:
@@ -161,7 +161,7 @@ def cmd_config(args: argparse.Namespace) -> None:
 
 def cmd_version(args: argparse.Namespace) -> None:
     """Show version information."""
-    print(f"cursor-cli version {VERSION}")
+    print(f"cursor-docker version {VERSION}")
     try:
         cursor_version = get_cursor_version()
         print(f"Latest Cursor version: {cursor_version}")
@@ -172,7 +172,7 @@ def cmd_version(args: argparse.Namespace) -> None:
 def parse_args() -> argparse.Namespace:
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(
-        prog="cursor-cli",
+        prog="cursor-docker",
         description="Run Cursor AI agent in a Docker container.",
         epilog=f"Configuration is stored in: {get_config_dir()}",
     )
@@ -207,7 +207,7 @@ def parse_args() -> argparse.Namespace:
     subparsers.add_parser(
         "version",
         help="show version information",
-        description="Display cursor-cli and Cursor versions.",
+        description="Display cursor-docker and Cursor versions.",
     )
 
     return parser.parse_args()
