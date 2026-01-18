@@ -3,7 +3,7 @@ class CursorCli < Formula
   homepage "https://github.com/commure/homebrew-packages"
   url "https://raw.githubusercontent.com/commure/homebrew-packages/dqjr/cursor-docker/tools/cursor-docker.py"
   version "1.0.0"
-  sha256 "" :no_check
+  # sha256 "" :no_check
   license "MIT"
 
   depends_on "python@3"
