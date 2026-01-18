@@ -2,7 +2,6 @@ class CursorCliDocker < Formula
   desc "CLI tool to run Cursor AI in a Docker container"
   homepage "https://github.com/commure/homebrew-packages"
   url "https://raw.githubusercontent.com/commure/homebrew-packages/refs/tags/cursor-docker-1.0.0/tools/cursor-docker.py"
-  version "1.0.0"
   sha256 "1ca412c40d6912d05c0a09c1ebe03a0f1b58c422edca9f6fa627552cd9437ce9"
   license "MIT"
 
