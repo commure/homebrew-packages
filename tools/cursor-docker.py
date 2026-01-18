@@ -39,7 +39,7 @@ RUN curl https://cursor.com/install -fsS | bash
 RUN mv /root/.local/share/cursor-agent /usr/local/share/cursor-agent && \
     ln -s /usr/local/share/cursor-agent/versions/$CURSOR_VERSION/cursor-agent /usr/local/bin/cursor-agent
 
-RUN groupadd -g $USER_GID cursor || true
+RUN if ! getent group $USER_GID > /dev/null 2>&1; then groupadd -g $USER_GID cursor; fi
 RUN useradd -u $USER_UID -g $USER_GID -m -d /workspace cursor
 RUN usermod -aG sudo cursor
 RUN echo "cursor ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
