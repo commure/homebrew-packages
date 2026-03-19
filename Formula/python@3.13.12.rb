@@ -12,7 +12,6 @@ class PythonAT31312 < Formula
     regex(%r{href=.*?v?(3\.13(?:\.\d+)*)/?["' >]}i)
   end
 
-  no_autobump! because: :requires_manual_review
 
   depends_on "pkgconf" => :build
   depends_on "mpdecimal"
