@@ -7,6 +7,7 @@ This is a **public Homebrew tap** for distributing custom formulae and casks.
 1. **Add the tap:**
     ```sh
     brew tap commure/packages
+    brew trust commure/packages
     ```
 
 2. **Install a formula:**
