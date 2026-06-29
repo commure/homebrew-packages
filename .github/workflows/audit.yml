@@ -17,6 +17,7 @@ jobs:
       - name: Setup hombrew tap
         run: |
           brew tap commure/packages ./
+          brew trust commure/packages
       - name: Run brew audit
         run: |
           brew audit --strict --online --tap ${{ github.repository }}
